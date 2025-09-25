@@ -1,0 +1,63 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>SkyEdu Checklist</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body{font:16px/1.5 system-ui,apple-system,Segoe UI,Roboto,Arial;padding:24px;max-width:720px;margin:auto}
+  header{margin-bottom:16px}
+  .task{display:flex;align-items:center;gap:10px;padding:10px 8px;border-bottom:1px solid #eee}
+  .sec{font-size:12px;opacity:.6}
+  .due{margin-left:auto;font-size:12px}
+  button{padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#fafafa;cursor:pointer}
+  .done{opacity:.5;text-decoration:line-through}
+</style>
+<header>
+  <h2>SkyEdu 체크리스트</h2>
+  <div id="meta"></div>
+</header>
+<div id="list"></div>
+
+<script>
+const API = "https://ubbb7llzj7.execute-api.ap-southeast-1.amazonaws.com";
+const url = new URL(location.href);
+const token = url.searchParams.get("t");
+if(!token){ document.body.innerHTML = "<p>토큰이 없습니다. URL에 ?t=TOKEN 을 붙여주세요.</p>"; throw ""; }
+
+async function load(){
+  const r = await fetch(`${API}/journeys/${token}`);
+  const data = await r.json();
+  document.getElementById("meta").textContent =
+    `${data.meta.parent_name} / 학년 ${data.meta.child_grade}`;
+
+  const box = document.getElementById("list");
+  box.innerHTML = "";
+  (data.tasks||[]).forEach(task=>{
+    const row = document.createElement("div");
+    row.className = "task " + (task.status==="done"?"done":"");
+    row.innerHTML = `
+      <input type="checkbox" ${task.status==="done"?"checked":""}>
+      <div>
+        <div>${task.title}</div>
+        <div class="sec">${task.section}</div>
+      </div>
+      <div class="due">${task.due_date||""}</div>
+      <button>저장</button>
+    `;
+    const cb = row.querySelector("input");
+    row.querySelector("button").onclick = async ()=>{
+      const status = cb.checked ? "done" : "open";
+      const id = task.sk.split("#")[1];
+      const res = await fetch(`${API}/journeys/${token}/tasks/${id}`, {
+        method:"PATCH",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({status})
+      });
+      const ok = (await res.json()).ok;
+      if(ok){ row.classList.toggle("done", status==="done"); }
+      else{ alert("업데이트 실패"); }
+    };
+    box.appendChild(row);
+  });
+}
+load();
+</script>
