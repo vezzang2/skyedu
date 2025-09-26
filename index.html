@@ -1,63 +1,332 @@
 <!doctype html>
-<meta charset="utf-8">
-<title>SkyEdu Checklist</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-  body{font:16px/1.5 system-ui,apple-system,Segoe UI,Roboto,Arial;padding:24px;max-width:720px;margin:auto}
-  header{margin-bottom:16px}
-  .task{display:flex;align-items:center;gap:10px;padding:10px 8px;border-bottom:1px solid #eee}
-  .sec{font-size:12px;opacity:.6}
-  .due{margin-left:auto;font-size:12px}
-  button{padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#fafafa;cursor:pointer}
-  .done{opacity:.5;text-decoration:line-through}
-</style>
-<header>
-  <h2>SkyEdu 체크리스트</h2>
-  <div id="meta"></div>
-</header>
-<div id="list"></div>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SkyEdu 체크리스트</title>
+  <meta name="description" content="말레이시아 유학 준비 체크리스트 – SkyEdu" />
+  <style>
+    :root{
+      --bg:#0b0c10;
+      --panel:#111216;
+      --soft:#171923;
+      --text:#eef2ff;
+      --muted:#aab0c0;
+      --brand:#5b8cff;
+      --brand-2:#7dcfff;
+      --success:#10b981;
+      --warn:#fbbf24;
+      --danger:#ef4444;
+      --chip:#232533;
+      --card:#121421;
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#0b0c10,#0c0e17 40%,#0d101b);color:var(--text);font:16px/1.6 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Apple Color Emoji,Segoe UI Emoji}
+    a{color:var(--brand)}
+    .wrap{max-width:960px;margin:32px auto;padding:0 16px}
+    header{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .title{display:flex;align-items:center;gap:12px}
+    .logo{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,var(--brand),var(--brand-2));display:grid;place-items:center;color:#0b1220;font-weight:900}
+    h1{margin:0;font-size:22px;letter-spacing:.3px}
+    .muted{color:var(--muted)}
+
+    .panel{background:var(--panel);border:1px solid #1b1f2a;border-radius:var(--radius);padding:16px}
+    .grid{display:grid;gap:16px}
+
+    .progress{display:grid;gap:8px;margin:12px 0 8px}
+    .bar{height:10px;background:#1c2130;border-radius:99px;overflow:hidden}
+    .bar>.fill{height:100%;background:linear-gradient(90deg,var(--brand),var(--brand-2));width:0}
+
+    .meta{display:flex;flex-wrap:wrap;gap:8px}
+    .chip{background:var(--chip);border:1px solid #262a39;border-radius:999px;padding:6px 10px;font-size:13px}
+
+    .section{margin-top:18px}
+    .section h2{font-size:15px;letter-spacing:.4px;margin:0 0 10px;color:#c6d0ff}
+
+    .task{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid #1b2030;border-radius:14px;padding:12px}
+    .task + .task{margin-top:10px}
+    .task .left{display:flex;gap:10px;align-items:center}
+    .task input[type="checkbox"]{width:20px;height:20px;accent-color:var(--brand)}
+    .task .title{font-weight:600}
+    .task .due{font-size:13px}
+    .task .pill{font-size:12px;border-radius:999px;padding:4px 8px;border:1px solid #263146;background:#161b28;color:#a4b1d2}
+    .task.done{opacity:.6}
+    .task.overdue{border-color:#3a1c1f;background:#141016}
+    .task.overdue .due{color:#ff9aa2}
+    .task.today .due{color:#ffe08a}
+
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    button, .btn{appearance:none;border:1px solid #263146;background:#121829;color:var(--text);padding:10px 14px;border-radius:12px;cursor:pointer}
+    button.primary{background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#071019;border:0}
+
+    .empty{display:grid;place-items:center;height:50vh;text-align:center}
+
+    .token-form{display:grid;gap:12px}
+    .token-form input{width:100%;padding:12px;border-radius:12px;border:1px solid #2a3142;background:#0f1422;color:#e8eeff}
+
+    footer{margin:28px 0;color:#8b94ad;font-size:13px}
+    code{background:#0f1422;border:1px solid #1c2130;padding:2px 6px;border-radius:6px}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title">
+      <div class="logo">S</div>
+      <div>
+        <h1>SkyEdu 체크리스트</h1>
+        <div class="muted" id="subtitle">학부모용 진행 현황</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="copyLinkBtn">공유 링크 복사</button>
+      <button class="btn" id="changeTokenBtn">토큰 변경</button>
+    </div>
+  </header>
+
+  <div id="needsToken" class="panel" style="display:none">
+    <h2 style="margin:0 0 8px;font-size:18px">공유 토큰 입력</h2>
+    <p class="muted" style="margin:0 0 8px">초대/공유 받은 링크의 토큰 값을 입력하세요. 예: <code>?t=p_xxxxxxxx</code></p>
+    <form class="token-form" id="tokenForm">
+      <input id="tokenInput" placeholder="예: p_uZ8T8hgL" required />
+      <div class="actions">
+        <button type="submit" class="primary">열기</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="journeyCard" class="panel" style="display:none">
+    <div class="grid">
+      <div>
+        <div class="meta" id="metaChips"></div>
+        <div class="progress">
+          <div class="muted">진행률 <span id="progressText">0%</span></div>
+          <div class="bar"><div class="fill" id="progressBar"></div></div>
+        </div>
+      </div>
+      <div id="sections"></div>
+    </div>
+  </div>
+
+  <div id="emptyBox" class="empty" style="display:none">
+    <div>
+      <div style="font-size:19px;margin-bottom:8px">표시할 항목이 없습니다</div>
+      <div class="muted">관리자에게 체크리스트 생성을 요청해 주세요.</div>
+    </div>
+  </div>
+
+  <footer>
+    <div>API: <code id="apiLabel"></code></div>
+  </footer>
+</div>
 
 <script>
-const API = "https://ubbb7llzj7.execute-api.ap-southeast-1.amazonaws.com";
+/**
+ * ───────────────────────────────────────────────────────────
+ *  환경 설정
+ * ───────────────────────────────────────────────────────────
+ *  API_GATEWAY_URL: API Gateway 기본 URL (스테이지 루트)
+ *  예) https://ubbb7llzj7.execute-api.ap-southeast-1.amazonaws.com
+ */
+const API_GATEWAY_URL = "https://ubbb7llzj7.execute-api.ap-southeast-1.amazonaws.com";
+
+document.getElementById('apiLabel').textContent = API_GATEWAY_URL;
+
+// 토큰은 URL ?t=... 에서 읽고, 없으면 localStorage의 마지막 사용 토큰을 사용
 const url = new URL(location.href);
-const token = url.searchParams.get("t");
-if(!token){ document.body.innerHTML = "<p>토큰이 없습니다. URL에 ?t=TOKEN 을 붙여주세요.</p>"; throw ""; }
+let TOKEN = (url.searchParams.get('t') || localStorage.getItem('skyedu_token') || '').trim();
 
-async function load(){
-  const r = await fetch(`${API}/journeys/${token}`);
-  const data = await r.json();
-  document.getElementById("meta").textContent =
-    `${data.meta.parent_name} / 학년 ${data.meta.child_grade}`;
+const els = {
+  needsToken: document.getElementById('needsToken'),
+  tokenForm: document.getElementById('tokenForm'),
+  tokenInput: document.getElementById('tokenInput'),
+  journeyCard: document.getElementById('journeyCard'),
+  metaChips: document.getElementById('metaChips'),
+  sections: document.getElementById('sections'),
+  progressText: document.getElementById('progressText'),
+  progressBar: document.getElementById('progressBar'),
+  emptyBox: document.getElementById('emptyBox'),
+  subtitle: document.getElementById('subtitle'),
+  copyLinkBtn: document.getElementById('copyLinkBtn'),
+  changeTokenBtn: document.getElementById('changeTokenBtn'),
+};
 
-  const box = document.getElementById("list");
-  box.innerHTML = "";
-  (data.tasks||[]).forEach(task=>{
-    const row = document.createElement("div");
-    row.className = "task " + (task.status==="done"?"done":"");
-    row.innerHTML = `
-      <input type="checkbox" ${task.status==="done"?"checked":""}>
-      <div>
-        <div>${task.title}</div>
-        <div class="sec">${task.section}</div>
-      </div>
-      <div class="due">${task.due_date||""}</div>
-      <button>저장</button>
-    `;
-    const cb = row.querySelector("input");
-    row.querySelector("button").onclick = async ()=>{
-      const status = cb.checked ? "done" : "open";
-      const id = task.sk.split("#")[1];
-      const res = await fetch(`${API}/journeys/${token}/tasks/${id}`, {
-        method:"PATCH",
-        headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({status})
-      });
-      const ok = (await res.json()).ok;
-      if(ok){ row.classList.toggle("done", status==="done"); }
-      else{ alert("업데이트 실패"); }
-    };
-    box.appendChild(row);
+// 이벤트: 토큰 입력
+els.tokenForm.addEventListener('submit', e => {
+  e.preventDefault();
+  const t = els.tokenInput.value.trim();
+  if(!t){ return; }
+  location.search = `?t=${encodeURIComponent(t)}`;
+});
+
+els.changeTokenBtn.addEventListener('click', () => {
+  const t = prompt('공유 토큰을 입력해 주세요', TOKEN || '');
+  if(t){ location.search = `?t=${encodeURIComponent(t.trim())}`; }
+});
+
+els.copyLinkBtn.addEventListener('click', async () => {
+  if(!TOKEN){ alert('먼저 토큰을 열어주세요.'); return; }
+  const link = `${location.origin}${location.pathname}?t=${encodeURIComponent(TOKEN)}`;
+  try{ await navigator.clipboard.writeText(link); alert('링크가 복사되었습니다!'); }
+  catch{ prompt('아래 링크를 복사하세요', link); }
+});
+
+// 유틸
+const fmt = (d) => new Date(d).toLocaleDateString('ko-KR', {year:'numeric', month:'2-digit', day:'2-digit'});
+function isToday(ymd){
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth()+1).padStart(2,'0');
+  const dd = String(now.getDate()).padStart(2,'0');
+  return ymd === `${yyyy}-${mm}-${dd}`;
+}
+function isPast(ymd){
+  const t = new Date(ymd + 'T00:00:00');
+  const now = new Date();
+  return t < new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+async function main(){
+  if(!TOKEN){
+    els.needsToken.style.display = 'block';
+    return;
+  }
+  localStorage.setItem('skyedu_token', TOKEN);
+  try{
+    const r = await fetch(`${API_GATEWAY_URL}/journeys/${encodeURIComponent(TOKEN)}`);
+    const data = await r.json();
+    if(!r.ok){ throw new Error(data.error || '불러오기 실패'); }
+    renderJourney(data);
+  }catch(err){
+    els.needsToken.style.display = 'block';
+    const msg = document.createElement('div');
+    msg.className = 'muted';
+    msg.style.marginTop = '10px';
+    msg.textContent = `오류: ${err.message}`;
+    els.needsToken.appendChild(msg);
+  }
+}
+
+function renderJourney({meta, tasks}){
+  els.needsToken.style.display = 'none';
+  if(!tasks || tasks.length === 0){
+    els.emptyBox.style.display = 'grid';
+    return;
+  }
+
+  els.journeyCard.style.display = 'block';
+  els.metaChips.innerHTML = '';
+
+  const chips = [
+    {label:'학부모', value: meta.parent_name || '—'},
+    {label:'학년', value: meta.child_grade || '—'},
+    {label:'생성', value: fmt(meta.created_at || new Date())},
+    {label:'토큰', value: meta.public_token || '—'}
+  ];
+  chips.forEach(c => {
+    const s = document.createElement('span');
+    s.className = 'chip';
+    s.textContent = `${c.label}: ${c.value}`;
+    els.metaChips.appendChild(s);
+  });
+
+  els.subtitle.textContent = `${meta.parent_name || '학부모님'}의 진행 현황`;
+
+  // 정렬 및 섹션 그룹핑
+  tasks.sort((a,b)=> (a.due_date||'').localeCompare(b.due_date||''));
+  const groups = {};
+  for(const t of tasks){
+    const sec = t.section || '기타';
+    (groups[sec] ||= []).push(t);
+  }
+
+  // 진행률
+  const total = tasks.length;
+  const done = tasks.filter(t => (t.status||'open') === 'done').length;
+  const pct = Math.round((done/total)*100);
+  els.progressText.textContent = `${pct}% (${done}/${total})`;
+  els.progressBar.style.width = pct + '%';
+
+  // 섹션 렌더링
+  els.sections.innerHTML = '';
+  Object.entries(groups).forEach(([section, list]) => {
+    const box = document.createElement('div');
+    box.className='section';
+    const h = document.createElement('h2');
+    h.textContent = section;
+    box.appendChild(h);
+
+    list.forEach(task => box.appendChild(renderTask(task)));
+    els.sections.appendChild(box);
   });
 }
-load();
+
+function renderTask(task){
+  const el = document.createElement('div');
+  el.className = 'task';
+  if(task.status === 'done') el.classList.add('done');
+  const over = isPast(task.due_date);
+  const today = isToday(task.due_date);
+  if(over) el.classList.add('overdue');
+  if(today) el.classList.add('today');
+
+  const left = document.createElement('div');
+  left.className = 'left';
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.checked = task.status === 'done';
+  cb.addEventListener('change', () => toggleTask(task, cb.checked, el));
+
+  const info = document.createElement('div');
+  const title = document.createElement('div');
+  title.className = 'title';
+  title.textContent = task.title || '(제목 없음)';
+  const sub = document.createElement('div');
+  sub.className = 'muted due';
+  sub.textContent = `마감일 ${task.due_date ? fmt(task.due_date) : '—'}`;
+
+  info.appendChild(title);
+  info.appendChild(sub);
+
+  left.appendChild(cb);
+  left.appendChild(info);
+
+  const right = document.createElement('div');
+  right.style.marginLeft = 'auto';
+  right.className='pill';
+  right.textContent = task.sk ? task.sk.replace('TASK#','') : task.section || '';
+
+  el.appendChild(left);
+  el.appendChild(right);
+  return el;
+}
+
+async function toggleTask(task, checked, container){
+  // 낙관적 UI
+  container.classList.toggle('done', checked);
+
+  try{
+    const id = (task.sk||'').split('#')[1] || task.id;
+    if(!id) throw new Error('task id 누락');
+    const r = await fetch(`${API_GATEWAY_URL}/journeys/${encodeURIComponent(TOKEN)}/tasks/${encodeURIComponent(id)}`,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ status: checked ? 'done':'open' })
+    });
+    if(!r.ok){
+      const e = await r.json().catch(()=>({}));
+      throw new Error(e.error || r.statusText);
+    }
+  }catch(err){
+    // 되돌리기
+    container.classList.toggle('done', !checked);
+    alert('저장 실패: ' + err.message);
+  }
+}
+
+main();
 </script>
+</body>
+</html>
